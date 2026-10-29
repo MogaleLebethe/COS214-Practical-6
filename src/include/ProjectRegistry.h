@@ -16,7 +16,7 @@ class WorkflowComponent;
 /**
  * @brief Manages isolated running project sessions, their history stacks, and audit logs.
  *
- * Acts as the centralized storage container for active project instances, ensuring
+ * Acts as the centralised storage container for active project instances, ensuring
  * that each project session maintains independent command histories and state isolation.
  */
 class ProjectRegistry

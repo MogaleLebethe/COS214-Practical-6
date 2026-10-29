@@ -83,14 +83,14 @@ public:
     WorkflowComponent* instantiate() const;
 
     /**
-     * @brief Serializes the workflow definition into a structured JSON object.
+     * @brief Serialises the workflow definition into a structured JSON object.
      * 
-     * @return `nlohmann::json` The serialized JSON representation of the definition.
+     * @return `nlohmann::json` The serialised JSON representation of the definition.
      */
     nlohmann::json toJson() const;
 
     /**
-     * @brief Deserializes and populates definition attributes from a JSON object.
+     * @brief Deserialises and populates definition attributes from a JSON object.
      * 
      * @param j Const reference to the `nlohmann::json` source object.
      */

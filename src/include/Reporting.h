@@ -33,7 +33,7 @@ public:
     virtual std::string viewProjectStatus(std::string projectId) const = 0;
 
     /**
-     * @brief Exports the entire project hierarchy tree into a serializable JSON format.
+     * @brief Exports the entire project hierarchy tree into a serialisable JSON format.
      *
      * @param projectId The unique identifier of the project.
      * @return `nlohmann::json` A JSON object representing the full project structure.

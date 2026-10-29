@@ -26,15 +26,15 @@ public:
      * @brief Formats a comprehensive status summary string for a project.
      * 
      * @param p Const reference to the root project object.
-     * @return `std::string` A formatted text block summarizing project status and task states.
+     * @return `std::string` A formatted text block summarising project status and task states.
      */
     std::string statusOf(const Project& p) const;
 
     /**
-     * @brief Serializes a project hierarchy into a structured JSON representation.
+     * @brief Serialises a project hierarchy into a structured JSON representation.
      * 
      * @param p Const reference to the root project object.
-     * @return `nlohmann::json` The serialized JSON tree.
+     * @return `nlohmann::json` The serialised JSON tree.
      */
     nlohmann::json exportJson(const Project& p) const;
 
