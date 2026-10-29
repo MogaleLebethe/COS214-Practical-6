@@ -28,17 +28,18 @@ ActionRegistry::ActionRegistry()
 
 void ActionRegistry::registerAction(const std::string& name, ActionCreator creator)
 {
-    if (!creator) return;
-    creators[name] = std::move(creator);
+    if (!creator)
+        throw WorkflowError("Cannot register action: creator function is null");
+    creators[name] = creator;
 }
 
 Command *ActionRegistry::create(const std::string &name, Task *task, const nlohmann::json &args) const
 {
-    if (has(name))
-        throw NotFoundError("Action creator not registered:" + name);
+    if (!has(name))
+        throw NotFoundError("Action creator not registered: " + name);
     if (!task)
         throw WorkflowError("Cannot execute action on null task pointer");
-    ActionCreator c = creators.at(name);
+    ActionCreator c = creators.find(name)->second;
     return c(task, args);
 }
 
