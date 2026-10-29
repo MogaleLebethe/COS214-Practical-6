@@ -1,5 +1,5 @@
 #include "DefinitionRepository.h"
-#include "WorkflowDefinition.h"
+#include "Support.h"
 #include "WorkflowError.h"
 
 void DefinitionRepository::add(const WorkflowDefinition &def)
