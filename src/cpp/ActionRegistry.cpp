@@ -1,5 +1,5 @@
 #include "ActionRegistry.h"
-#include "TaskStateCommand.h"
+#include "Command.h"
 #include "Task.h"
 #include "WorkflowError.h"
 #include <stdexcept>
