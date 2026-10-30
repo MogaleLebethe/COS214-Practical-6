@@ -15,7 +15,6 @@ class ReportService;
 class DefinitionRepository;
 class ActionRegistry;
 class RouterRegistry;
-class IndustryModule;
 class Participant;
 class WorkItemView;
 
@@ -49,15 +48,6 @@ public:
     WorkflowEngineFacade(ProjectRegistry& reg, WorkflowFactory& f, ReportService& r, 
                            DefinitionRepository& d, ActionRegistry& a, RouterRegistry& rr);
 
-    /**
-     * @brief Installs an external industry module into the engine registries.
-     * 
-     * @details Delegates registration calls to the provided module so it can bind custom 
-     *          actions, definitions, and routing strategies.
-     * 
-     * @param m Reference to the industry module to install.
-     */
-    void installModule(IndustryModule& m);
 
     // ProjectManagement Interface Implementation 
     std::string createProject(std::string name, std::string desc = "") override;
