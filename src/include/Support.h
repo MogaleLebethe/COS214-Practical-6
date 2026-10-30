@@ -3,13 +3,14 @@
 
 #include <string>
 #include <vector>
-#include <stack>
-#include <memory>
 #include <nlohmann/json.hpp>
 
 // Forward declarations
 class Command;
 class Project;
+class AuditEntry;
+class AuditLog;
+class CommandHistory;
 
 /**
  * @brief Represents date and time information for workflow deadlines, audit timestamps, and comments.
@@ -263,24 +264,55 @@ public:
  * @brief Represents a single immutable audit log record for tracking workflow and project actions.
  */
 class AuditEntry {
-public:
-    std::string kind;        ///< Category or kind of audit action (e.g., `EXECUTE`, `UNDO`, `REJECTED`).
-    std::string description; ///< Detailed description of the action event.
-    DateTime timestamp;      ///< Timestamp of when the event occurred.
+private:
+    std::string timestamp;  ///< ISO-8601 timestamp string of when the event occurred.
+    std::string actorId;    ///< Identifier of the user or system component that performed the action.
+    std::string actionType; ///< Category or name of the action performed.
+    std::string details;    ///< Detailed description or JSON payload snapshot of the event.
 
+public:
     /**
      * @brief Constructs an audit entry record.
      * 
-     * @param kind Action kind category.
-     * @param description Event description.
-     * @param timestamp Timestamp of occurrence.
+     * @param timestamp ISO-8601 timestamp string.
+     * @param actorId Identifier of the actor.
+     * @param actionType Type of action performed.
+     * @param details Descriptive detail string.
      */
-    AuditEntry(const std::string& kind, const std::string& description, const DateTime& timestamp);
+    AuditEntry(const std::string& timestamp, const std::string& actorId, const std::string& actionType, const std::string& details);
 
     /**
      * @brief Virtual destructor.
      */
     virtual ~AuditEntry() = default;
+
+    /**
+     * @brief Retrieves the timestamp of the audit entry.
+     * 
+     * @return `std::string` Timestamp string.
+     */
+    std::string getTimestamp() const;
+
+    /**
+     * @brief Retrieves the identifier of the actor who performed the action.
+     * 
+     * @return `std::string` Actor ID string.
+     */
+    std::string getActorId() const;
+
+    /**
+     * @brief Retrieves the type of action performed.
+     * 
+     * @return `std::string` Action type string.
+     */
+    std::string getActionType() const;
+
+    /**
+     * @brief Retrieves the details of the audit entry.
+     * 
+     * @return `std::string` Detail string.
+     */
+    std::string getDetails() const;
 
     /**
      * @brief Serializes the audit entry into a JSON representation.
@@ -295,7 +327,7 @@ public:
  */
 class AuditLog {
 private:
-    std::vector<AuditEntry> entries; ///< Collection of recorded audit entries.
+    std::vector<AuditEntry*> entries; ///< Collection of non-owning raw pointers to audit entries.
 
 public:
     /**
@@ -304,32 +336,28 @@ public:
     AuditLog();
 
     /**
-     * @brief Virtual destructor.
+     * @brief Destroys the audit log and cleans up dynamically allocated audit entries.
      */
-    virtual ~AuditLog() = default;
+    virtual ~AuditLog();
 
     /**
      * @brief Records a new audit entry in the log.
      * 
-     * @param kind Category kind of the audit action.
-     * @param description Description of the event.
-     * @param at Timestamp of the event.
+     * @param entry Raw pointer to the `AuditEntry` to record (log takes ownership).
      */
-    void record(const std::string& kind, const std::string& description, const DateTime& at);
+    void record(AuditEntry* entry);
 
     /**
      * @brief Retrieves all audit entries currently recorded.
      * 
-     * @return `const std::vector<AuditEntry>&` Const reference to the vector of audit entries.
+     * @return `const std::vector<AuditEntry*>&` Const reference to the vector of audit entries.
      */
-    const std::vector<AuditEntry>& getEntries() const;
+    const std::vector<AuditEntry*>& getEntries() const;
 
     /**
-     * @brief Generates a vector of formatted string representations of all audit entries.
-     * 
-     * @return `std::vector<std::string>` Vector of audit log strings.
+     * @brief Clears all records from the audit log.
      */
-    std::vector<std::string> toStrings() const;
+    void clear();
 
     /**
      * @brief Serializes the complete audit log history into a JSON array representation.
@@ -344,30 +372,26 @@ public:
  */
 class CommandHistory {
 private:
-    std::stack<std::shared_ptr<Command>> undoStack; ///< Stack of executed commands available for undo.
-    std::stack<std::shared_ptr<Command>> redoStack; ///< Stack of undone commands available for redo.
-    AuditLog* audit;                                ///< Non-owning raw pointer to the associated audit log.
+    std::vector<Command*> undoStack; ///< Stack of executed commands available for undo.
+    std::vector<Command*> redoStack; ///< Stack of undone commands available for redo.
 
 public:
     /**
-     * @brief Constructs a command history container.
-     * 
-     * @param audit Raw pointer to the `AuditLog` instance for recording history events.
+     * @brief Constructs an empty command history container.
      */
-    explicit CommandHistory(AuditLog* audit);
+    CommandHistory();
 
     /**
-     * @brief Virtual destructor.
+     * @brief Destroys the command history and cleans up any allocated command objects.
      */
-    virtual ~CommandHistory() = default;
+    virtual ~CommandHistory();
 
     /**
-     * @brief Executes a command, records it onto the undo stack, and clears the redo stack if successful.
+     * @brief Executes a command, records it onto the undo stack, and clears the redo stack.
      * 
-     * @param cmd Shared pointer to the `Command` to run.
-     * @throws `WorkflowError` If execution fails (audits as `REJECTED` and rethrows).
+     * @param command Raw pointer to the `Command` to execute (history takes ownership).
      */
-    void run(std::shared_ptr<Command> cmd);
+    void executeCommand(Command* command);
 
     /**
      * @brief Reverts the most recent command on the undo stack and moves it to the redo stack.
@@ -396,28 +420,71 @@ public:
      * @return `bool` `true` if the redo stack is non-empty, `false` otherwise.
      */
     bool canRedo() const;
+
+    /**
+     * @brief Clears all commands from both undo and redo history stacks.
+     */
+    void clear();
 };
 
 /**
- * @brief Encapsulates a project instance along with its isolated audit log and command history.
+ * @brief Encapsulates the active state, command history, and audit trail for an open project session.
  */
 class ProjectSession {
-public:
-    std::shared_ptr<Project> project;       ///< Shared pointer to the active project instance.
-    std::unique_ptr<AuditLog> audit;        ///< Unique pointer to the session audit log.
-    std::unique_ptr<CommandHistory> history;///< Unique pointer to the command history manager.
+private:
+    std::string sessionId;          ///< Unique identifier for the session.
+    Project* activeProject;         ///< Non-owning raw pointer to the loaded project instance.
+    CommandHistory* commandHistory; ///< Raw pointer to the command history manager for undo/redo.
+    AuditLog* auditLog;             ///< Raw pointer to the session audit log tracker.
 
+public:
     /**
      * @brief Constructs a project session container.
      * 
-     * @param proj Shared pointer to the project instance.
+     * @param sessionId Unique session identifier string.
+     * @param project Raw pointer to the active project instance.
      */
-    explicit ProjectSession(std::shared_ptr<Project> proj);
+    ProjectSession(const std::string& sessionId, Project* project);
 
     /**
-     * @brief Virtual destructor.
+     * @brief Destroys the project session and cleans up owned history and audit resources.
      */
-    virtual ~ProjectSession() = default;
+    virtual ~ProjectSession();
+
+    /**
+     * @brief Retrieves the unique session identifier.
+     * 
+     * @return `std::string` Session ID string.
+     */
+    std::string getSessionId() const;
+
+    /**
+     * @brief Retrieves the active project instance.
+     * 
+     * @return `Project*` Raw pointer to the active project.
+     */
+    Project* getActiveProject() const;
+
+    /**
+     * @brief Retrieves the command history manager.
+     * 
+     * @return `CommandHistory*` Raw pointer to command history.
+     */
+    CommandHistory* getCommandHistory() const;
+
+    /**
+     * @brief Retrieves the session audit log.
+     * 
+     * @return `AuditLog*` Raw pointer to the audit log.
+     */
+    AuditLog* getAuditLog() const;
+
+    /**
+     * @brief Executes a command within the context of this project session, recording it in history and audit logs.
+     * 
+     * @param command Raw pointer to the `Command` to execute.
+     */
+    void executeCommand(Command* command);
 };
 
 #endif // TIVIDY_SUPPORT_H
