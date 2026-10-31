@@ -1,4 +1,4 @@
-# COS214-Practical-6
+# COS214-Project-2026
 ## Branch Workflow
 
 **`main`** is locked. Do NOT push or merge into it. It only receives the final, finished project from `dev`.
