@@ -4,6 +4,7 @@
 #include <string>
 #include <map>
 
+class Task;
 class DateTime; 
 
 class TaskMemento {
