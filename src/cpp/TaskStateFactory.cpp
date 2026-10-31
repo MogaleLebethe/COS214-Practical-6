@@ -1,12 +1,5 @@
 #include "TaskStateFactory.h"
 #include "TaskState.h"
-#include "PendingState.h"
-#include "InProgressState.h"
-#include "BlockedState.h"
-#include "CompletedState.h"
-#include "FailedState.h"
-#include "CancelledState.h"
-#include "SkippedState.h"
 #include "WorkflowError.h"
 
 TaskState* TaskStateFactory::get(const std::string& name){
@@ -31,7 +24,7 @@ TaskState* TaskStateFactory::get(const std::string& name){
     if (name == SkippedState::instance()->toString()){
         return SkippedState::instance();
     }
-    throw NotFoundError("TaskStateFactory::get: no state named \"" + name + ""\""); 
+    throw NotFoundError("TaskStateFactory::get: no state named \"" + name + "\""); 
     
     
 
